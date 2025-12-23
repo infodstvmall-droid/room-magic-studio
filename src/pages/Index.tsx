@@ -9,21 +9,21 @@ import ResultsSection from "@/components/ResultsSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import Footer from "@/components/Footer";
+import { transformRoom, fileToBase64 } from "@/lib/transformRoom";
+import { useToast } from "@/hooks/use-toast";
 
 type AppState = "landing" | "upload" | "style" | "processing" | "results";
-
-// Demo images for transformation preview
-const DEMO_BEFORE = "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&q=80";
-const DEMO_AFTER = "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80";
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>("landing");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [transformedImage, setTransformedImage] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleGetStarted = useCallback(() => {
     setAppState("upload");
-    // Scroll to upload section
     setTimeout(() => {
       document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -32,8 +32,8 @@ const Index = () => {
   const handleImageSelected = useCallback((file: File) => {
     const imageUrl = URL.createObjectURL(file);
     setUploadedImage(imageUrl);
+    setUploadedFile(file);
     setAppState("style");
-    // Scroll to style section
     setTimeout(() => {
       document.getElementById("style-section")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -43,25 +43,52 @@ const Index = () => {
     setSelectedStyle(styleId);
   }, []);
 
-  const handleTransform = useCallback(() => {
-    if (selectedStyle) {
-      setAppState("processing");
+  const handleTransform = useCallback(async () => {
+    if (!selectedStyle || !uploadedFile) return;
+    
+    setAppState("processing");
+
+    try {
+      // Convert file to base64
+      const base64 = await fileToBase64(uploadedFile);
+      
+      // Call the AI transformation
+      const result = await transformRoom(base64, selectedStyle);
+      
+      setTransformedImage(result.transformedImage);
+      setAppState("results");
+      
+      toast({
+        title: "Transformation Complete!",
+        description: `Your room has been transformed to ${selectedStyle} style.`,
+      });
+    } catch (error) {
+      console.error("Transformation error:", error);
+      setAppState("style");
+      toast({
+        variant: "destructive",
+        title: "Transformation Failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
     }
-  }, [selectedStyle]);
+  }, [selectedStyle, uploadedFile, toast]);
 
   const handleProcessingComplete = useCallback(() => {
-    setAppState("results");
+    // This is now handled by the actual API call
   }, []);
 
   const handleTryAnother = useCallback(() => {
     setSelectedStyle(null);
+    setTransformedImage(null);
     setAppState("style");
   }, []);
 
   const handleReset = useCallback(() => {
     setAppState("landing");
     setUploadedImage(null);
+    setUploadedFile(null);
     setSelectedStyle(null);
+    setTransformedImage(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -78,11 +105,11 @@ const Index = () => {
         </AnimatePresence>
 
         {/* Results View */}
-        {appState === "results" && selectedStyle && (
+        {appState === "results" && selectedStyle && uploadedImage && (
           <div className="pt-20">
             <ResultsSection
-              beforeImage={uploadedImage || DEMO_BEFORE}
-              afterImage={DEMO_AFTER}
+              beforeImage={uploadedImage}
+              afterImage={transformedImage || uploadedImage}
               selectedStyle={selectedStyle}
               onTryAnother={handleTryAnother}
               onReset={handleReset}
@@ -91,7 +118,7 @@ const Index = () => {
         )}
 
         {/* Main Flow */}
-        {appState !== "results" && (
+        {appState !== "results" && appState !== "processing" && (
           <>
             <HeroSection onGetStarted={handleGetStarted} />
 

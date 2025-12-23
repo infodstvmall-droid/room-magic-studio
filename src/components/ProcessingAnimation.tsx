@@ -3,14 +3,14 @@ import { Sparkles, Palette, Lightbulb, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface ProcessingAnimationProps {
-  onComplete: () => void;
+  onComplete?: () => void;
 }
 
 const steps = [
-  { icon: Sparkles, text: "Analyzing your space...", duration: 2000 },
-  { icon: Palette, text: "Applying design style...", duration: 2500 },
-  { icon: Lightbulb, text: "Optimizing lighting...", duration: 2000 },
-  { icon: Wand2, text: "Finalizing transformation...", duration: 1500 },
+  { icon: Sparkles, text: "Analyzing your space...", duration: 3000 },
+  { icon: Palette, text: "Applying design style...", duration: 4000 },
+  { icon: Lightbulb, text: "Optimizing lighting...", duration: 3000 },
+  { icon: Wand2, text: "Finalizing transformation...", duration: 5000 },
 ];
 
 const ProcessingAnimation = ({ onComplete }: ProcessingAnimationProps) => {
@@ -18,34 +18,28 @@ const ProcessingAnimation = ({ onComplete }: ProcessingAnimationProps) => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const totalDuration = steps.reduce((acc, step) => acc + step.duration, 0);
-    let elapsed = 0;
-    let stepStartTime = 0;
-
+    // Cycle through steps indefinitely until parent removes this component
     const interval = setInterval(() => {
-      elapsed += 50;
-      setProgress((elapsed / totalDuration) * 100);
-
-      // Determine current step
-      let accumulated = 0;
-      for (let i = 0; i < steps.length; i++) {
-        if (elapsed < accumulated + steps[i].duration) {
-          if (currentStep !== i) {
-            setCurrentStep(i);
-          }
-          break;
+      setProgress((prev) => {
+        const newProgress = prev + 0.5;
+        // Loop progress between 0-95% to show ongoing work
+        if (newProgress >= 95) {
+          return 10;
         }
-        accumulated += steps[i].duration;
-      }
+        return newProgress;
+      });
+    }, 100);
 
-      if (elapsed >= totalDuration) {
-        clearInterval(interval);
-        onComplete();
-      }
-    }, 50);
+    // Cycle through steps
+    const stepInterval = setInterval(() => {
+      setCurrentStep((prev) => (prev + 1) % steps.length);
+    }, 4000);
 
-    return () => clearInterval(interval);
-  }, [onComplete]);
+    return () => {
+      clearInterval(interval);
+      clearInterval(stepInterval);
+    };
+  }, []);
 
   const CurrentIcon = steps[currentStep]?.icon || Sparkles;
 
@@ -86,14 +80,14 @@ const ProcessingAnimation = ({ onComplete }: ProcessingAnimationProps) => {
                 left: "50%",
               }}
               animate={{
-                x: [0, 60 * Math.cos((i * 2 * Math.PI) / 3 + Date.now() / 1000), 0],
-                y: [0, 60 * Math.sin((i * 2 * Math.PI) / 3 + Date.now() / 1000), 0],
+                x: [0, 60 * Math.cos((i * 2 * Math.PI) / 3), -60 * Math.cos((i * 2 * Math.PI) / 3), 0],
+                y: [0, 60 * Math.sin((i * 2 * Math.PI) / 3), -60 * Math.sin((i * 2 * Math.PI) / 3), 0],
                 opacity: [0.5, 1, 0.5],
               }}
               transition={{
-                duration: 2,
+                duration: 3,
                 repeat: Infinity,
-                delay: i * 0.3,
+                delay: i * 0.5,
               }}
             />
           ))}
@@ -101,7 +95,6 @@ const ProcessingAnimation = ({ onComplete }: ProcessingAnimationProps) => {
 
         {/* Title */}
         <motion.h2
-          key={`title-${currentStep}`}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-4"
@@ -124,12 +117,9 @@ const ProcessingAnimation = ({ onComplete }: ProcessingAnimationProps) => {
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-gold rounded-full"
-              style={{ width: `${progress}%` }}
-              transition={{ duration: 0.1 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.3 }}
             />
-          </div>
-          <div className="absolute right-0 top-4 text-sm text-muted-foreground">
-            {Math.round(progress)}%
           </div>
         </div>
 
@@ -143,21 +133,10 @@ const ProcessingAnimation = ({ onComplete }: ProcessingAnimationProps) => {
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all duration-300 ${
                   index === currentStep
                     ? "bg-gold/20 text-gold"
-                    : index < currentStep
-                    ? "bg-muted text-muted-foreground"
                     : "text-muted-foreground/50"
                 }`}
               >
                 <StepIcon className="w-4 h-4" />
-                {index === currentStep && (
-                  <motion.span
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: "auto", opacity: 1 }}
-                    className="hidden sm:inline"
-                  >
-                    {step.text.replace("...", "")}
-                  </motion.span>
-                )}
               </motion.div>
             );
           })}
@@ -165,7 +144,7 @@ const ProcessingAnimation = ({ onComplete }: ProcessingAnimationProps) => {
 
         {/* Estimated Time */}
         <p className="text-muted-foreground text-sm mt-8">
-          This takes 15-30 seconds
+          AI is transforming your room... This may take 15-30 seconds
         </p>
       </div>
     </motion.div>
