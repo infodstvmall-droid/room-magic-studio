@@ -1,0 +1,4 @@
+project_id = "xyswoyvyxswqykchwmrz"
+
+[functions.transform-room]
+verify_jwt = false
