@@ -4,9 +4,10 @@ import { useRef, useState } from "react";
 
 interface UploadSectionProps {
   onImageSelected: (file: File) => void;
+  onOpenARScanner: () => void;
 }
 
-const UploadSection = ({ onImageSelected }: UploadSectionProps) => {
+const UploadSection = ({ onImageSelected, onOpenARScanner }: UploadSectionProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -62,8 +63,7 @@ const UploadSection = ({ onImageSelected }: UploadSectionProps) => {
       icon: Smartphone,
       title: "AR Scan",
       description: "Live room scanning",
-      action: () => {},
-      badge: "Coming Soon",
+      action: onOpenARScanner,
     },
   ];
 
@@ -110,16 +110,8 @@ const UploadSection = ({ onImageSelected }: UploadSectionProps) => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               onClick={method.action}
-              disabled={!!method.badge}
-              className={`group relative p-8 rounded-2xl glass-card border-border/50 hover:border-gold/50 transition-all duration-300 text-left ${
-                method.badge ? "opacity-70 cursor-not-allowed" : "hover:shadow-gold cursor-pointer"
-              }`}
+              className="group relative p-8 rounded-2xl glass-card border-border/50 hover:border-gold/50 transition-all duration-300 text-left hover:shadow-gold cursor-pointer"
             >
-              {method.badge && (
-                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-gold/20 text-gold text-xs font-medium">
-                  {method.badge}
-                </div>
-              )}
               <div className="w-14 h-14 rounded-xl bg-gradient-gold flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                 <method.icon className="w-7 h-7 text-primary-foreground" />
               </div>
@@ -127,6 +119,13 @@ const UploadSection = ({ onImageSelected }: UploadSectionProps) => {
                 {method.title}
               </h3>
               <p className="text-muted-foreground">{method.description}</p>
+              
+              {/* AR Badge */}
+              {method.title === "AR Scan" && (
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-gold/20 text-gold text-xs font-medium">
+                  NEW
+                </div>
+              )}
             </motion.button>
           ))}
         </div>
