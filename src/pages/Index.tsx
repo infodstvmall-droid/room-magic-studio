@@ -9,6 +9,7 @@ import ResultsSection from "@/components/ResultsSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import Footer from "@/components/Footer";
+import ARScanner from "@/components/ARScanner";
 import { transformRoom, fileToBase64 } from "@/lib/transformRoom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,6 +21,7 @@ const Index = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [transformedImage, setTransformedImage] = useState<string | null>(null);
+  const [isARScannerOpen, setIsARScannerOpen] = useState(false);
   const { toast } = useToast();
 
   const handleGetStarted = useCallback(() => {
@@ -92,9 +94,32 @@ const Index = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const handleOpenARScanner = useCallback(() => {
+    setIsARScannerOpen(true);
+  }, []);
+
+  const handleCloseARScanner = useCallback(() => {
+    setIsARScannerOpen(false);
+  }, []);
+
+  const handleARCapture = useCallback((file: File) => {
+    handleImageSelected(file);
+    toast({
+      title: "Room Captured!",
+      description: "Now select a style to transform your space.",
+    });
+  }, [handleImageSelected, toast]);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
+      {/* AR Scanner Modal */}
+      <ARScanner
+        isOpen={isARScannerOpen}
+        onClose={handleCloseARScanner}
+        onCapture={handleARCapture}
+      />
 
       <main>
         {/* Processing Overlay */}
@@ -125,7 +150,10 @@ const Index = () => {
             {/* Upload Section - Always visible after getting started */}
             {(appState === "upload" || appState === "style") && (
               <div id="upload-section">
-                <UploadSection onImageSelected={handleImageSelected} />
+                <UploadSection 
+                  onImageSelected={handleImageSelected} 
+                  onOpenARScanner={handleOpenARScanner}
+                />
               </div>
             )}
 
